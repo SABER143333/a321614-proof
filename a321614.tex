@@ -1,0 +1,461 @@
+\documentclass[12pt]{article}
+
+\usepackage{fullpage}
+\usepackage{amssymb}
+\usepackage{amsmath}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+\begin{document}
+
+\title{The conjectured order-10 recurrence for the number of
+nonequivalent maximum king placements on a $4 \times 2n$ board}
+
+\author{Shi Li\thanks{Business School, Nanjing Normal University, Nanjing,
+China. Email: \texttt{saberson946@gmail.com}.}}
+
+\date{}
+
+\maketitle
+
+\begin{abstract}
+Let $a(n)$ denote the number of ways to place $2n$ nonattacking kings on a
+$4 \times 2n$ board attaining the maximum $2n$, counted up to the symmetry
+group of the rectangle. In 2018 Colin Barker conjectured an order-10 linear
+recurrence for $a(n)$, equivalently a rational generating function, on the
+basis of about eleven confirming terms; the conjecture is recorded as such in
+the OEIS entry A321614 and has remained unproved. We prove it for all $n$. The
+proof has two ingredients. First, the maximum condition forces exactly one king
+into each of the $2n$ disjoint $2 \times 2$ blocks of the board, which turns the
+problem into a walk in a $12$-state transfer graph. Second, Burnside's lemma
+over the Klein four-group expresses $a(n)$ as an average of four fixed-point
+counts, each of which is a linear combination of entries of powers of the
+transfer matrix. Summing the resulting rational generating functions in exact
+arithmetic yields Barker's generating function identically. Every combinatorial
+step is proved by hand; the only machine-assisted step is the exact rational
+arithmetic of the final identity, which the accompanying programs reproduce in
+seconds.
+\end{abstract}
+
+\section{Introduction}
+
+A set of kings on a chessboard is \emph{nonattacking} if no two of them are at
+Chebyshev distance at most one, that is, if no two share a row, column, or
+diagonal neighbour. On a $4 \times 2n$ board the maximum number of nonattacking
+kings is $2n$, since the board partitions into $2n$ disjoint $2 \times 2$ blocks
+and each block accommodates at most one king.
+
+Let $a(n)$ be the number of such maximum placements, counted up to the
+symmetry group of the rectangle, that is, up to the Klein four-group generated
+by the horizontal reflection, the vertical reflection, and the $180^\circ$
+rotation. This is the sequence A321614 in the OEIS \cite{oeis}. Its published
+terms are
+\[
+1, 4, 23, 106, 473, 1939, 7618, 28703, 105112, 375597, 1316944, 4544124,
+\]
+continuing to $a(21) = 665017743665$.
+
+On 22 December 2018 Colin Barker conjectured \cite{oeis} that
+\begin{equation}
+\label{eq:rec}
+a(n) = 12a(n-1) - 54a(n-2) + 98a(n-3) + 17a(n-4) - 346a(n-5)
+ + 505a(n-6) - 210a(n-7) - 120a(n-8) + 126a(n-9) - 27a(n-10)
+\end{equation}
+for $n > 9$, with the equivalent rational generating function
+\begin{equation}
+\label{eq:gf}
+A(x) = \sum_{n \ge 0} a(n) x^n
+ = \frac{(1-2x)(1-6x+17x^2-18x^3-2x^4+7x^5+6x^6-3x^7)}
+        {(1-x)^2 (1-3x)^2 (1-3x+x^2)(1-x-x^2)(1-3x^2)} .
+\end{equation}
+The evidence was a fit to roughly eleven terms. We prove the conjecture.
+
+\begin{theorem}
+\label{thm:main}
+For every $n \ge 10$ the recurrence \eqref{eq:rec} holds, and the generating
+function of $a(n)$ is \eqref{eq:gf}.
+\end{theorem}
+
+\begin{remark}
+\label{rem:group}
+For $n = 2$ the board $4 \times 4$ is a square and its full symmetry group is
+larger than the Klein four-group. The sequence is nevertheless defined with the
+four-group for every $n$, and it is this convention that reproduces
+$a(2) = 23$. The distinction matters only at $n = 2$ and is flagged because it
+is the one place where the definition and the geometry diverge.
+\end{remark}
+
+The proof strategy is standard for counts of this type: a finite-state transfer
+matrix for the placements, Burnside's lemma for the symmetry quotient, and exact
+rational arithmetic for the generating function. The point of the paper is that
+the maximum condition makes the transfer matrix small and explicit, so that the
+whole computation can be carried out and checked.
+
+\section{The block structure}
+
+Index board rows by $0, 1, 2, 3$ and columns by $0, 1, \dots, 2n-1$. Partition
+the board into blocks
+\[
+B_{i,j} = \{2i, 2i+1\} \times \{2j, 2j+1\},
+\qquad i \in \{0,1\}, \quad j \in \{0, \dots, n-1\}.
+\]
+There are $2n$ blocks.
+
+\begin{lemma}
+\label{lem:pigeonhole}
+Every placement of $2n$ nonattacking kings puts exactly one king in each block
+$B_{i,j}$.
+\end{lemma}
+
+\begin{proof}
+Two cells of one block differ by at most one in each coordinate, so they are at
+Chebyshev distance at most one and a block contains at most one king. Since
+there are $2n$ blocks and $2n$ kings, every block contains exactly one.
+\end{proof}
+
+Consequently every maximum placement is described by a word
+$s_0 s_1 \cdots s_{n-1}$ of \emph{column states}: if the king in block $B_{i,j}$
+occupies the cell $(2i + r_{i,j},\, 2j + c_{i,j})$ with $r_{i,j}, c_{i,j} \in
+\{0,1\}$, then
+\[
+s_j = (r_{0,j},\, c_{0,j},\, r_{1,j},\, c_{1,j}).
+\]
+
+\begin{lemma}
+\label{lem:locality}
+Two blocks can interact only if they lie in the same column or in adjacent
+columns.
+\end{lemma}
+
+\begin{proof}
+Block $B_{i,j}$ occupies board columns $2j$ and $2j+1$. If $|j - j'| \ge 2$
+then any two cells of $B_{i,j}$ and $B_{i',j'}$ have column indices differing
+by at least $4 - 1 = 3$, so the kings do not attack.
+\end{proof}
+
+By Lemma \ref{lem:locality} every constraint relates a column to itself or to
+one of its two neighbours, and no constraint relates cells within a block,
+by Lemma \ref{lem:pigeonhole}.
+
+\section{The four local constraints}
+
+Write $s = (r_0, c_0, r_1, c_1)$ for a column state and $u = (R_0, C_0, R_1,
+C_1)$ for the state of the next column.
+
+\subsection{Within a column}
+
+Blocks $B_{0,j}$ and $B_{1,j}$ occupy the same board columns, so their column
+indices differ by at most one and the column condition is automatic. The
+vertical distance between the kings is
+\[
+(2 + R_1) - r_0 = 2 + R_1 - r_0,
+\]
+which is at most one exactly when $r_0 = 1$ and $R_1 = 0$. Hence $s$ is
+\emph{admissible}, meaning that the two kings of the column do not attack, if
+and only if
+\begin{equation}
+\label{eq:adm}
+\neg (r_0 = 1 \ \text{and}\ r_1 = 0).
+\end{equation}
+Among the sixteen states in $\{0,1\}^4$ exactly twelve satisfy \eqref{eq:adm}.
+
+\subsection{Same row-pair, adjacent columns}
+
+Blocks $B_{i,j}$ and $B_{i,j+1}$ occupy the same pair of rows. The horizontal
+distance between the kings is
+\[
+(2j + 2 + C) - (2j + c) = 2 + C - c,
+\]
+which is at most one exactly when $c = 1$ and $C = 0$. Hence the condition is
+\begin{equation}
+\label{eq:same}
+c_{i,j} \le c_{i,j+1}
+\end{equation}
+for $i = 0$ and for $i = 1$.
+
+\subsection{Diagonal, first orientation}
+
+Consider $B_{0,j}$ and $B_{1,j+1}$. The vertical distance is $2 + R_1 - r_0$,
+at most one exactly when $r_0 = 1$ and $R_1 = 0$. The horizontal distance is
+$2 + C_1 - c_0$, at most one exactly when $c_0 = 1$ and $C_1 = 0$. The kings
+attack precisely when all four hold, so the condition is
+\begin{equation}
+\label{eq:diag1}
+\neg (r_0 = 1 \ \text{and}\ R_1 = 0 \ \text{and}\ c_0 = 1 \ \text{and}\ C_1 = 0).
+\end{equation}
+
+\subsection{Diagonal, second orientation}
+
+Symmetrically, for $B_{1,j}$ and $B_{0,j+1}$ the condition is
+\begin{equation}
+\label{eq:diag2}
+\neg (r_1 = 0 \ \text{and}\ R_0 = 1 \ \text{and}\ c_1 = 1 \ \text{and}\ C_0 = 0).
+\end{equation}
+
+By Lemmas \ref{lem:pigeonhole} and \ref{lem:locality}, conditions
+\eqref{eq:adm} to \eqref{eq:diag2} are necessary and sufficient for a word of
+column states to describe a maximum nonattacking placement. This is a finite
+case analysis, complete by the four derivations above.
+
+\section{The transfer matrix}
+
+List the twelve admissible states in the order
+\[
+\begin{array}{llll}
+s_0 = (0,0,0,0) & s_1 = (0,0,0,1) & s_2 = (0,0,1,0) & s_3 = (0,0,1,1) \\
+s_4 = (0,1,0,0) & s_5 = (0,1,0,1) & s_6 = (0,1,1,0) & s_7 = (0,1,1,1) \\
+s_8 = (1,0,1,0) & s_9 = (1,0,1,1) & s_{10} = (1,1,1,0) & s_{11} = (1,1,1,1)
+\end{array}
+\]
+and let $M$ be the $12 \times 12$ matrix with $M[i][j] = 1$ if the pair
+$(s_i, s_j)$ satisfies \eqref{eq:same}, \eqref{eq:diag1} and \eqref{eq:diag2},
+and $M[i][j] = 0$ otherwise. Explicitly,
+\[
+M = \begin{pmatrix}
+1&1&1&1&1&1&1&1&1&1&1&1\\
+0&1&0&1&0&1&0&1&0&0&0&1\\
+1&1&1&1&1&1&1&1&1&1&1&1\\
+0&1&0&1&0&1&0&1&0&1&0&1\\
+0&0&0&0&1&1&1&1&0&0&1&1\\
+0&0&0&0&0&1&0&1&0&0&0&1\\
+0&0&0&0&1&1&1&1&0&0&1&1\\
+0&0&0&0&0&1&0&1&0&0&0&1\\
+1&1&1&1&1&1&1&1&1&1&1&1\\
+0&1&0&1&0&1&0&1&0&1&0&1\\
+0&0&0&0&0&1&1&1&0&0&1&1\\
+0&0&0&0&0&1&0&1&0&0&0&1
+\end{pmatrix}.
+\]
+Let $\mathbf{1}$ denote the all-ones vector. A word of $n$ admissible states
+with every consecutive pair satisfying the transition conditions is exactly a
+maximum placement, so the number of placements without any symmetry quotient is
+\begin{equation}
+\label{eq:T}
+T(n) = \mathbf{1}^{\mathsf{T}} M^{n-1} \mathbf{1},
+\qquad T(0) = 1.
+\end{equation}
+The characteristic polynomial of $M$ is
+\begin{equation}
+\label{eq:charpoly}
+\chi_M(\lambda) = \lambda^6 (\lambda - 3)^2 (\lambda^2 - 3\lambda + 1)^2,
+\qquad
+\det(I - xM) = (3x-1)^2 (x^2 - 3x + 1)^2 .
+\end{equation}
+
+\section{Burnside over the four-group}
+
+The four symmetries act on cells by
+\[
+h \colon (\rho, \gamma) \mapsto (\rho, 2n-1-\gamma), \quad
+v \colon (\rho, \gamma) \mapsto (3-\rho, \gamma), \quad
+r \colon (\rho, \gamma) \mapsto (3-\rho, 2n-1-\gamma).
+\]
+On blocks they act by $h \colon B_{i,j} \mapsto B_{i, n-1-j}$,
+$v \colon B_{i,j} \mapsto B_{1-i, j}$ and $r \colon B_{i,j} \mapsto
+B_{1-i, n-1-j}$, and on offsets by $h \colon (r,c) \mapsto (r, 1-c)$,
+$v \colon (r,c) \mapsto (1-r, c)$ and $r \colon (r,c) \mapsto (1-r, 1-c)$. The
+induced maps on column states are therefore
+\begin{align}
+\sigma_h (r_0,c_0,r_1,c_1) &= (r_0, 1-c_0, r_1, 1-c_1), \label{eq:sigh}\\
+\sigma_v (r_0,c_0,r_1,c_1) &= (r_1, c_1, r_0, c_0), \label{eq:sigv}\\
+\sigma_r (r_0,c_0,r_1,c_1) &= (1-r_1, 1-c_1, 1-r_0, 1-c_0). \label{eq:sigr}
+\end{align}
+With the convention of Remark \ref{rem:group}, Burnside's lemma gives, for
+$n \ge 1$,
+\begin{equation}
+\label{eq:burnside}
+a(n) = \frac{T(n) + F_h(n) + F_v(n) + F_r(n)}{4},
+\end{equation}
+where $T(n)$ is as in \eqref{eq:T} and $F_h, F_v, F_r$ count the placements
+fixed by $h$, $v$ and $r$ respectively.
+
+\subsection{The vertical reflection}
+
+By \eqref{eq:sigv}, a column state is fixed by $\sigma_v$ if and only if
+\[
+r_1 = 1 - r_0 \quad \text{and} \quad c_1 = c_0 .
+\]
+The admissibility condition \eqref{eq:adm} then reads $\neg(r_0 = 1 \ \text{and}
+\ r_0 = 1)$, forcing $r_0 = 0$ and $r_1 = 1$. The fixed admissible states are
+therefore exactly
+\[
+(0,c,1,c), \qquad c \in \{0,1\},
+\]
+namely $s_2$ and $s_7$. The two other states satisfying the algebraic fixed
+condition, $(1,0,0,0)$ and $(1,1,0,1)$, are inadmissible and do not occur.
+
+For two consecutive such states $(0,c,1,c)$ and $(0,C,1,C)$, condition
+\eqref{eq:same} reads $c \le C$; conditions \eqref{eq:diag1} and \eqref{eq:diag2}
+are vacuously satisfied because they require $r_0 = 1$ and $r_1 = 0$
+respectively. Hence a placement fixed by $v$ is exactly a non-decreasing word in
+$\{0,1\}$ of length $n$, and
+\begin{equation}
+\label{eq:Fv}
+F_v(n) = n + 1 .
+\end{equation}
+
+\subsection{The horizontal reflection}
+
+A placement fixed by $h$ has column $2h-1-j$ in state $\sigma_h(s_j)$, so for
+even $n = 2h$ it is a palindrome determined by $s_0, \dots, s_{h-1}$. Every
+transition inside a half is automatic once the word is admissible; the only
+additional condition is at the junction between columns $h-1$ and $h$, which
+reads
+\[
+\text{trans}\bigl(s_{h-1},\, \sigma_h(s_{h-1})\bigr).
+\]
+Let $J_h$ be the indicator vector of the states satisfying this condition. By
+\eqref{eq:sigh} and the transition conditions,
+\[
+J_h = (1,0,1,0,\ 0,0,0,0,\ 1,0,0,0).
+\]
+Then $(M^{h-1} J_h)[s_0]$ counts the admissible words of length $h$ beginning at
+$s_0$ whose last letter satisfies the junction condition, so
+\begin{equation}
+\label{eq:Fh}
+F_h(2h) = \mathbf{1}^{\mathsf{T}} M^{h-1} J_h,
+\qquad h \ge 1 .
+\end{equation}
+For odd $n$ the middle column would have to satisfy $\sigma_h(s) = s$, which by
+\eqref{eq:sigh} requires $c_0 = 1 - c_0$, impossible. Hence
+\begin{equation}
+\label{eq:Fhodd}
+F_h(n) = 0 \quad \text{for odd } n .
+\end{equation}
+
+\subsection{The $180^\circ$ rotation}
+
+The same analysis applies with \eqref{eq:sigr}. A state is fixed by $\sigma_r$
+precisely when $r_0 = 1 - r_1$ and $c_0 = 1 - c_1$. Admissibility then forces
+$r_0 = 0$ and $r_1 = 1$, leaving the two states
+\[
+s_3 = (0,0,1,1) \quad \text{and} \quad s_6 = (0,1,1,0).
+\]
+Write $C_1 = 2$ for their number. For even $n = 2h$ the junction condition gives
+the indicator vector
+\[
+J_{re} = (1,0,1,1,\ 1,0,1,0,\ 1,1,0,0),
+\]
+and hence
+\begin{equation}
+\label{eq:Ffre}
+F_r(2h) = \mathbf{1}^{\mathsf{T}} M^{h-1} J_{re}, \qquad h \ge 1 .
+\end{equation}
+For odd $n = 2h+1$ the middle column $m$ must be fixed by $\sigma_r$ and must
+connect to its neighbour on both sides, so define
+\[
+J_{ro}[s] = \# \{\, m : \sigma_r(m) = m,\ \text{trans}(s,m),\ \text{trans}(m,\sigma_r(s)) \,\}.
+\]
+Then $F_r(1) = C_1 = 2$, and
+\begin{equation}
+\label{eq:Ffro}
+F_r(2h+1) = \mathbf{1}^{\mathsf{T}} M^{h-1} J_{ro}, \qquad h \ge 1 .
+\end{equation}
+
+\section{The generating function}
+
+Each of $T$, $F_h$ and $F_r$ is a sum of sequences of the form
+$\mathbf{1}^{\mathsf{T}} M^{k} w$ over $k$, hence rational. By
+Cayley--Hamilton and \eqref{eq:charpoly}, for any vectors $u$ and $w$,
+\[
+\sum_{k \ge 0} (u^{\mathsf{T}} M^k w) x^k = \frac{p(x)}{q(x)},
+\qquad q(x) = \det(I - xM),
+\]
+with $\deg p < \deg q$. The numerator is recovered as the initial segment of
+$q(x)$ times the series, an identity valid because the coefficients satisfy the
+recurrence implied by $q$ beyond degree $\deg q$. The vanishing of $F_h$ at odd
+$n$ in \eqref{eq:Fhodd} and the even and odd cases in \eqref{eq:Fh},
+\eqref{eq:Ffre} and \eqref{eq:Ffro} correspond to the substitution $y = x^2$,
+and \eqref{eq:Fv} contributes
+\[
+\sum_{n \ge 1} (n+1) x^n = \frac{1}{(1-x)^2} - 1 .
+\]
+All of this is carried out in exact rational arithmetic. Summing the four pieces
+through \eqref{eq:burnside} and cancelling gives
+\[
+\sum_{n \ge 0} a(n) x^n
+ = \frac{6x^8 - 15x^7 - 8x^6 + 11x^5 + 34x^4 - 52x^3 + 29x^2 - 8x + 1}
+        {27x^{10} - 126x^9 + 120x^8 + 210x^7 - 505x^6 + 346x^5
+         - 17x^4 - 98x^3 + 54x^2 - 12x + 1},
+\]
+where the denominator factors as
+\[
+(x-1)^2 (3x-1)^2 (3x^2-1) (x^2-3x+1) (x^2+x-1),
+\]
+which is exactly the denominator of \eqref{eq:gf}, and the numerator is exactly
+that of \eqref{eq:gf}. As the two generating functions are equal as rational
+functions, and a rational function with denominator of degree $10$ satisfies the
+corresponding order-$10$ recurrence, \eqref{eq:rec} holds for all $n \ge 10$.
+This proves Theorem \ref{thm:main}. The verification is reproduced by the
+accompanying programs, which compute the difference of the two rational
+functions symbolically and report zero.
+
+\section{Verification}
+
+The programs accompanying this paper are collected in a single directory and
+are runnable with a standard Python installation. They perform the following
+checks.
+
+\begin{enumerate}
+\item The transfer matrix reproduces all 22 published terms of A321614 exactly.
+
+\item $T(n)$, $F_h(n)$, $F_v(n)$ and $F_r(n)$ are each checked \emph{separately}
+against definition-level enumeration of placements and of fixed points, for
+$n \le 5$. Checking the four terms individually rather than only their average
+matters: Burnside's lemma is a statement about each fixed-point count on its
+own, so two terms could be wrong in opposite directions and cancel in
+\eqref{eq:burnside}.
+
+\item An independent implementation that never uses the block structure,
+namely a column-profile dynamic program over grid independent sets, agrees with
+the transfer matrix for $n \le 26$.
+
+\item The generating-function identity is verified symbolically, and the
+reported difference of the two rational functions is exactly zero.
+
+\item The objects transcribed in this paper, namely the matrix $M$, the state
+list, and the vectors $J_h$ and $J_{re}$, are parsed back out of the source of
+this paper and compared with the programs, so that a transcription error cannot
+go unnoticed.
+
+\item The dimension reduction behind Lemma \ref{lem:pigeonhole} is checked
+exhaustively: all 16 within-column states and all 144 ordered pairs of
+cross-column states are compared with the geometric nonattacking condition.
+
+\end{enumerate}
+
+The programs, the term data, and the instructions for reproducing every number
+in this paper are available from the author.
+
+\section{Acknowledgment}
+
+The author thanks the OEIS for maintaining the entry A321614 and Colin Barker
+for the conjecture, and acknowledges the collaborative superpermutation and
+nonattacking-pieces literature from which the transfer-matrix method used here
+is drawn.
+
+\begin{thebibliography}{9}
+
+\bibitem{oeis}
+N. J. A. Sloane, editor, \emph{The On-Line Encyclopedia of Integer Sequences},
+sequence A321614, \url{https://oeis.org/A321614}.
+
+\bibitem{howroyd}
+A. Howroyd, comment on sequence A321614, OEIS, December 2018.
+
+\bibitem{kotesovec}
+V. Kotesovec, \emph{Non-attacking chess pieces}, sixth edition, 2013.
+
+\bibitem{wilf}
+H. S. Wilf, The problem of the kings, \emph{Electronic Journal of
+Combinatorics} \textbf{2} (1995), R3.
+
+\end{thebibliography}
+
+\end{document}
